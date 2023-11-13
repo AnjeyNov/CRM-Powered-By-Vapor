@@ -11,6 +11,7 @@ final class Product: Model, Content {
         case creationDate
         case creatorUserId
         case imageUrl
+        case category
         
         var fieldKey: FieldKey {
             FieldKey.string(self.rawValue)
@@ -40,4 +41,7 @@ final class Product: Model, Content {
     
     @Children(for: \.$product)
     var comments: [Comment]
+    
+    @Parent(key: CodingKeys.category.fieldKey)
+    var category: Category
 }

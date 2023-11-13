@@ -83,3 +83,12 @@ extension EventLoopFuture where Value == Array<User> {
         return self.map { $0.convertToPublic() }
     }
 }
+
+extension User: ModelAuthenticatable {
+    static let usernameKey = \User.$username
+    static let passwordHashKey = \User.$password
+
+    func verify(password: String) throws -> Bool {
+        try Bcrypt.verify(password, created: self.password)
+    }
+}
