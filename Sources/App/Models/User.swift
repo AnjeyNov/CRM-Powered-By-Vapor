@@ -1,0 +1,85 @@
+import Vapor
+import Fluent
+
+final class User: Model, Content {
+    static var schema = "users"
+    
+    enum CodingKeys: String {
+        case name
+        case username
+        case password
+        
+        var fieldKey: FieldKey {
+            FieldKey.string(self.rawValue)
+        }
+    }
+    
+    @ID
+    var id: UUID?
+    
+    @Field(key: CodingKeys.name.fieldKey)
+    var name: String
+    
+    @Field(key: CodingKeys.username.fieldKey)
+    var username: String
+    
+    @Field(key: CodingKeys.password.fieldKey)
+    var password: String
+
+    @Children(for: \.$creatorUser)
+    var products: [Product]
+    
+    @Children(for: \.$creatorUser)
+    var comments: [Comment]
+    
+    init() {}
+    
+    init(
+        id: UUID? = nil,
+        name: String,
+        username: String,
+        password: String
+    ) {
+        self.name = name
+        self.username = username
+        self.password = password
+    }
+    
+    final class Public: Content {
+        var id: UUID?
+        var name: String
+        var username: String
+        
+        init(id: UUID?, name: String, username: String) {
+            self.id = id
+            self.name = name
+            self.username = username
+        }
+    }
+}
+
+extension User {
+    func convertToPublic() -> User.Public {
+        return User.Public(id: id, name: name, username: username)
+    }
+}
+
+extension EventLoopFuture where Value: User {
+    func convertToPublic() -> EventLoopFuture<User.Public> {
+        return self.map { user in
+            return user.convertToPublic()
+        }
+    }
+}
+
+extension Collection where Element: User {
+    func convertToPublic() -> [User.Public] {
+        return self.map { $0.convertToPublic() }
+    }
+}
+
+extension EventLoopFuture where Value == Array<User> {
+    func convertToPublic() -> EventLoopFuture<[User.Public]> {
+        return self.map { $0.convertToPublic() }
+    }
+}
