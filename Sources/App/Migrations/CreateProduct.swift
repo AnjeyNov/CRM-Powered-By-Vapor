@@ -8,11 +8,18 @@ struct CreateProduct: AsyncMigration {
             .field(Product.CodingKeys.description.fieldKey, .string, .required)
             .field(Product.CodingKeys.isDeleted.fieldKey, .bool, .required)
             .field(Product.CodingKeys.creationDate.fieldKey, .date, .required)
+            .field(Product.CodingKeys.imageUrl.fieldKey, .string, .required)
             .field(
                 Product.CodingKeys.creatorUserId.fieldKey,
                 .uuid, 
                 .required,
-                .references(User.schema, "id")
+                .references(User.schema, .id)
+            )
+            .field(
+                Product.CodingKeys.category.fieldKey,
+                .uuid,
+                .required,
+                .references(Category.schema, .id)
             )
             .create()
     }
