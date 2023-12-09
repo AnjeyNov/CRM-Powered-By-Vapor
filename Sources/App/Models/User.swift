@@ -8,6 +8,8 @@ final class User: Model, Content {
         case name
         case username
         case password
+        case isDeleted
+        case role
         
         var fieldKey: FieldKey {
             FieldKey.string(self.rawValue)
@@ -25,6 +27,12 @@ final class User: Model, Content {
     
     @Field(key: CodingKeys.password.fieldKey)
     var password: String
+    
+    @Field(key: CodingKeys.isDeleted.fieldKey)
+    var isDeleted: Bool
+    
+    @Field(key: CodingKeys.role.fieldKey)
+    var role: String
 
     @Children(for: \.$creatorUser)
     var products: [Product]
@@ -38,29 +46,48 @@ final class User: Model, Content {
         id: UUID? = nil,
         name: String,
         username: String,
-        password: String
+        password: String,
+        isDeleted: Bool,
+        role: String
     ) {
         self.name = name
         self.username = username
         self.password = password
+        self.isDeleted = isDeleted
+        self.role = role
+    }
+    
+    convenience init(from createData: CreateData) {
+        self.init(name: createData.name, username: createData.username, password: createData.password, isDeleted: false, role: createData.role)
     }
     
     final class Public: Content {
         var id: UUID?
         var name: String
         var username: String
+        var isDeleted: Bool
+        var role: String
         
-        init(id: UUID?, name: String, username: String) {
+        init(id: UUID?, name: String, username: String, isDeleted: Bool, role: String) {
             self.id = id
             self.name = name
             self.username = username
+            self.isDeleted = isDeleted
+            self.role = role
         }
+    }
+    
+    final class CreateData: Content {
+        var name: String
+        var username: String
+        var password: String
+        var role: String
     }
 }
 
 extension User {
     func convertToPublic() -> User.Public {
-        return User.Public(id: id, name: name, username: username)
+        return User.Public(id: id, name: name, username: username, isDeleted: isDeleted, role: role)
     }
 }
 
