@@ -58,7 +58,7 @@ final class User: Model, Content {
     }
     
     convenience init(from createData: CreateData) {
-        self.init(name: createData.name, username: createData.username, password: createData.password, isDeleted: false, role: createData.role)
+        self.init(name: createData.name, username: createData.username, password: createData.password, isDeleted: false, role: "user")
     }
     
     final class Public: Content {
@@ -81,7 +81,6 @@ final class User: Model, Content {
         var name: String
         var username: String
         var password: String
-        var role: String
     }
 }
 

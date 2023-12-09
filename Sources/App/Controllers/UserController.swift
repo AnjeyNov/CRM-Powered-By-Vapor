@@ -7,6 +7,7 @@ struct UserController: RouteCollection {
         let usersRoute = routes.grouped("api", "users")
         usersRoute.get(use: getAllHandler)
         usersRoute.get(":userID", use: getHandler)
+        usersRoute.post(use: createHandler)
 
         let basicAuthMiddleware = User.authenticator()
         let basicAuthGroup = usersRoute.grouped(basicAuthMiddleware)
@@ -15,20 +16,34 @@ struct UserController: RouteCollection {
         let tokenAuthMiddleware = Token.authenticator()
         let guardAuthMiddleware = User.guardMiddleware()
         let tokenAuthGroup = usersRoute.grouped(tokenAuthMiddleware, guardAuthMiddleware)
-        tokenAuthGroup.post(use: createHandler)
         tokenAuthGroup.delete(":userID", use: deleteHandler)
+        tokenAuthGroup.put(use: updateHandler)
     }
 
     func createHandler(_ req: Request) throws -> EventLoopFuture<User.Public> {
-        let creator = try req.auth.require(User.self)
-        guard creator.role == "admin" else {
-            throw Abort(.unauthorized)
-        }
-
         let userCreateData = try req.content.decode(User.CreateData.self)
         userCreateData.password = try Bcrypt.hash(userCreateData.password)
         let user = User(from: userCreateData)
         return user.save(on: req.db).map { user.convertToPublic() }
+    }
+    
+    func updateHandler(_ req: Request) throws -> EventLoopFuture<User.Public> {
+        let creator = try req.auth.require(User.self)
+        let userPublicData = try req.content.decode(User.Public.self)
+
+        guard creator.role == "admin", let userID = userPublicData.id, creator.id != userPublicData.id else {
+            throw Abort(.unauthorized)
+        }
+
+        return User
+            .find(userID, on: req.db)
+            .unwrap(or: Abort(.notFound))
+            .flatMap { user in
+                user.name = userPublicData.name
+                user.username = userPublicData.username
+                user.role = userPublicData.role
+                return user.save(on: req.db).map { user.convertToPublic() }
+            }
     }
 
     func deleteHandler(_ req: Request) throws -> EventLoopFuture<User.Public> {
