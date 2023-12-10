@@ -2,7 +2,7 @@
 import Fluent
 import Vapor
 
-struct UserController: RouteCollection {
+struct UsersController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let usersRoute = routes.grouped("api", "users")
         usersRoute.get(use: getAllHandler)
@@ -46,7 +46,7 @@ struct UserController: RouteCollection {
             }
     }
 
-    func deleteHandler(_ req: Request) throws -> EventLoopFuture<User.Public> {
+    func deleteHandler(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let creator = try req.auth.require(User.self)
         guard creator.role == "admin" else {
             throw Abort(.methodNotAllowed)
@@ -58,7 +58,7 @@ struct UserController: RouteCollection {
             .flatMap { user in
                 guard !user.isDeleted else { return req.eventLoop.future(error: Abort(.conflict)) }
                 user.isDeleted = true
-                return user.save(on: req.db).map { user.convertToPublic() }
+                return user.save(on: req.db).transform(to: .noContent)
             }
     }
 
@@ -76,13 +76,13 @@ struct UserController: RouteCollection {
             .convertToPublic()
     }
 
-    func loginHandler(_ req: Request) throws -> EventLoopFuture<Token> {
+    func loginHandler(_ req: Request) throws -> EventLoopFuture<Token.Public> {
         let user = try req.auth.require(User.self)
         guard !user.isDeleted else {
             throw Abort(.unauthorized)
         }
 
         let token = try Token.generate(for: user)
-        return token.save(on: req.db).map { token }
+        return token.save(on: req.db).map { token.convertToPublic() }
     }
 }

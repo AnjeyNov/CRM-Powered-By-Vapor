@@ -36,6 +36,14 @@ final class Token: Model, Content {
         self.value = value
         self.$user.id = userID
     }
+    
+    final class Public: Content {
+        let value: String
+        
+        init(value: String) {
+            self.value = value
+        }
+    }
 }
 
 extension Token {
@@ -54,3 +62,28 @@ extension Token: ModelTokenAuthenticatable {
     }
 }
 
+extension Token {
+    func convertToPublic() -> Token.Public {
+        return Token.Public(value: self.value)
+    }
+}
+
+extension EventLoopFuture where Value: Token {
+    func convertToPublic() -> EventLoopFuture<Token.Public> {
+        return self.map { user in
+            return user.convertToPublic()
+        }
+    }
+}
+
+extension Collection where Element: Token {
+    func convertToPublic() -> [Token.Public] {
+        return self.map { $0.convertToPublic() }
+    }
+}
+
+extension EventLoopFuture where Value == Array<Token> {
+    func convertToPublic() -> EventLoopFuture<[Token.Public]> {
+        return self.map { $0.convertToPublic() }
+    }
+}

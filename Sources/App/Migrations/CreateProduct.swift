@@ -15,12 +15,6 @@ struct CreateProduct: AsyncMigration {
                 .required,
                 .references(User.schema, .id)
             )
-            .field(
-                Product.CodingKeys.category.fieldKey,
-                .uuid,
-                .required,
-                .references(Category.schema, .id)
-            )
             .create()
     }
 

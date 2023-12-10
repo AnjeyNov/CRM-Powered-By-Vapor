@@ -39,6 +39,7 @@ public func configure(_ app: Application) async throws {
     app.migrations.add(CreateToken())
     app.migrations.add(CreateCategory())
     app.migrations.add(CreateProduct())
+    app.migrations.add(CreateProductCategoryPivot())
     app.migrations.add(CreateComment())
     app.migrations.add(CreateAdminUser())
     

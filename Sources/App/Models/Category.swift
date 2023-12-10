@@ -25,7 +25,7 @@ final class Category: Model, Content {
     @Field(key: CodingKeys.name.fieldKey)
     var name: String
 
-    @Children(for: \.$category)
-    var comments: [Product]
+    @Siblings(through: ProductCategoryPivot.self, from: \.$category, to: \.$product)
+    var products: [Product]
 }
 

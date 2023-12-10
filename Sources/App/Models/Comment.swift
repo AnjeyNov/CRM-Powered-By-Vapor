@@ -33,4 +33,26 @@ final class Comment: Model, Content {
     
     @Parent(key: CodingKeys.creatorUserId.fieldKey)
     var creatorUser: User
+    
+    init() { }
+    
+    init(
+        id: UUID? = nil,
+        product: Product.IDValue,
+        description: String,
+        isDeleted: Bool,
+        creationDate: Date,
+        creatorUser: User.IDValue
+    ) {
+        self.id = id
+        self.$product.id = product
+        self.description = description
+        self.isDeleted = isDeleted
+        self.creationDate = creationDate
+        self.$creatorUser.id = creatorUser
+    }
+    
+    final class CreateData: Content {
+        let description: String
+    }
 }
