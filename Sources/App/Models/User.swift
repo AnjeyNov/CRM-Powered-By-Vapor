@@ -82,6 +82,13 @@ final class User: Model, Content {
         var username: String
         var password: String
     }
+    
+    final class UpdateData: Content {
+        var name: String
+        var username: String
+        var password: String
+        var role: String?
+    }
 }
 
 extension User {
