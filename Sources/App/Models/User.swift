@@ -84,9 +84,8 @@ final class User: Model, Content {
     }
     
     final class UpdateData: Content {
-        var name: String
-        var username: String
-        var password: String
+        var name: String?
+        var username: String?
         var role: String?
     }
 }

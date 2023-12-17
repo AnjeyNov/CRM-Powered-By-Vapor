@@ -1,18 +1,19 @@
 // swift-tools-version:5.9
+
 import PackageDescription
 
 let package = Package(
     name: "PracowniaProgramowania",
     platforms: [
-       .macOS(.v13)
+       .macOS(.v12)
     ],
     dependencies: [
         // 💧 A server-side Swift web framework.
-        .package(url: "https://github.com/vapor/vapor.git", from: "4.83.1"),
+        .package(url: "https://github.com/vapor/vapor.git", from: "4.89.3"),
         // 🗄 An ORM for SQL and NoSQL databases.
         .package(url: "https://github.com/vapor/fluent.git", from: "4.8.0"),
         // 🐘 Fluent driver for Postgres.
-        .package(url: "https://github.com/vapor/fluent-postgres-driver.git", from: "2.7.2"),
+        .package(url: "https://github.com/vapor/fluent-postgres-driver.git", from: "2.8.0"),
     ],
     targets: [
         .executableTarget(

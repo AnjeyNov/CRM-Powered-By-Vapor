@@ -45,8 +45,10 @@ struct CategoriesController: RouteCollection {
                 }
 
                 category.name = categoryCreateData.name
-                try category.save(on: req.db).wait()
                 return category
+            }
+            .flatMap { category in
+                category.update(on: req.db).map { category }
             }
     }
     
@@ -62,8 +64,10 @@ struct CategoriesController: RouteCollection {
                 }
 
                 category.isDeleted = true
-                try category.save(on: req.db).wait()
                 return category
+            }
+            .flatMap { category in
+                category.update(on: req.db).map { category }
             }
     }
     

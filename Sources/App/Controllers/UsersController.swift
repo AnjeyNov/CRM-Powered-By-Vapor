@@ -18,6 +18,12 @@ struct UsersController: RouteCollection {
         let tokenAuthGroup = usersRoute.grouped(tokenAuthMiddleware, guardAuthMiddleware)
         tokenAuthGroup.delete(":userID", use: deleteHandler)
         tokenAuthGroup.put(":userID", use: updateHandler)
+        tokenAuthGroup.get("current", use: getCurrentUserHandler)
+    }
+    
+    func getCurrentUserHandler(_ req: Request) throws -> EventLoopFuture<User.Public> {
+        let currentUser = try req.auth.require(User.self)
+        return req.eventLoop.future(currentUser.convertToPublic())
     }
 
     func createHandler(_ req: Request) throws -> EventLoopFuture<User.Public> {
@@ -44,8 +50,12 @@ struct UsersController: RouteCollection {
                     throw Abort(.forbidden)
                 }
 
-                user.name = userChangeData.name
-                user.username = userChangeData.username
+                if let name = userChangeData.name {
+                    user.name = name
+                }
+                if let username = userChangeData.username {
+                    user.username = username
+                }
                 
                 if let role = userChangeData.role {
                     if updater.role == "admin" {
@@ -55,10 +65,12 @@ struct UsersController: RouteCollection {
                     }
                 }
 
-                try user.save(on: req.db).wait()
-
-                return user.convertToPublic()
+                return user
             }
+            .flatMap { user in
+                return user.update(on: req.db).map { user }
+            }
+            .convertToPublic()
     }
 
     func deleteHandler(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
@@ -77,7 +89,7 @@ struct UsersController: RouteCollection {
             }
     }
 
-    func getAllHandler(_ req: Request) -> EventLoopFuture<[User.Public]> {
+    func getAllHandler(_ req: Request) throws -> EventLoopFuture<[User.Public]> {
         User
             .query(on: req.db)
             .all()

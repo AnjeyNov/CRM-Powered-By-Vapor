@@ -11,7 +11,7 @@ import Vapor
 struct ProductsController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
         let acronymsRoutes = routes.grouped("api", "products")
-        acronymsRoutes.get(use: getAllHandler)
+        acronymsRoutes.get(use: getPageHandler)
         acronymsRoutes.get(":productID", use: getHandler)
         acronymsRoutes.get("search", use: searchHandler)
         acronymsRoutes.get(":productID", "user", use: getUserHandler)
@@ -27,8 +27,11 @@ struct ProductsController: RouteCollection {
         tokenAuthGroup.delete(":productID", "categories", ":categoryID", use: removeCategoriesHandler)
     }
     
-    func getAllHandler(_ req: Request) -> EventLoopFuture<[Product]> {
-        Product.query(on: req.db).all()
+    func getPageHandler(_ req: Request) throws -> EventLoopFuture<Page<Product>> {
+        let page = try req.query.decode(PageRequest.self)
+        return Product
+            .query(on: req.db)
+            .paginate(page)
     }
     
     func createHandler(_ req: Request) throws -> EventLoopFuture<Product> {

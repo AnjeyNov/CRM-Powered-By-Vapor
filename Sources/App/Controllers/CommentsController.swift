@@ -93,10 +93,10 @@ struct CommentsController: RouteCollection {
                 }
 
                 comment.isDeleted = true
-
-                try comment.save(on: req.db).wait()
-
-                return .noContent
+                return comment
+            }
+            .flatMap { comment in
+                comment.update(on: req.db).transform(to: .noContent)
             }
     }
 }
