@@ -12,6 +12,7 @@ struct CreateCategory: AsyncMigration {
         try await database.schema(Category.schema)
             .id()
             .field(Category.CodingKeys.name.fieldKey, .string, .required)
+            .field(Category.CodingKeys.isDeleted.fieldKey, .bool, .required)
             .create()
     }
 

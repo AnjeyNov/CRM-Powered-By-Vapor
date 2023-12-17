@@ -19,11 +19,52 @@ struct CategoriesController: RouteCollection {
         let guardAuthMiddleware = User.guardMiddleware()
         let tokenAuthGroup = categoriesRoute.grouped(tokenAuthMiddleware, guardAuthMiddleware)
         tokenAuthGroup.post(use: createHandler)
+        tokenAuthGroup.put(":categoryID", use: editHandler)
+        tokenAuthGroup.delete(":categoryID", use: deleteHandler)
     }
     
     func createHandler(_ req: Request) throws -> EventLoopFuture<Category> {
-        let category = try req.content.decode(Category.self)
+        let user = try req.auth.require(User.self)
+        guard user.role == "admin" else { throw Abort(.methodNotAllowed) }
+
+        let categoryCreateData = try req.content.decode(Category.CreateData.self)
+        let category = Category(name: categoryCreateData.name)
         return category.save(on: req.db).map { category }
+    }
+    
+    func editHandler(_ req: Request) throws -> EventLoopFuture<Category> {
+        let user = try req.auth.require(User.self)
+        guard user.role == "admin" else { throw Abort(.methodNotAllowed) }
+
+        let categoryCreateData = try req.content.decode(Category.CreateData.self)
+        return Category.find(req.parameters.get("categoryID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+            .flatMapThrowing { category in
+                guard !category.isDeleted else {
+                    throw Abort(.notFound)
+                }
+
+                category.name = categoryCreateData.name
+                try category.save(on: req.db).wait()
+                return category
+            }
+    }
+    
+    func deleteHandler(_ req: Request) throws -> EventLoopFuture<Category> {
+        let user = try req.auth.require(User.self)
+        guard user.role == "admin" else { throw Abort(.methodNotAllowed) }
+
+        return Category.find(req.parameters.get("categoryID"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+            .flatMapThrowing { category in
+                guard !category.isDeleted else {
+                    throw Abort(.notFound)
+                }
+
+                category.isDeleted = true
+                try category.save(on: req.db).wait()
+                return category
+            }
     }
     
     func getAllHandler(_ req: Request) -> EventLoopFuture<[Category]> {
