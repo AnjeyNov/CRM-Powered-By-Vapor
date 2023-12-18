@@ -31,13 +31,14 @@ struct ProductsController: RouteCollection {
         let page = try req.query.decode(PageRequest.self)
         return Product
             .query(on: req.db)
+            .filter(\.$isDeleted != true)
             .paginate(page)
     }
     
     func createHandler(_ req: Request) throws -> EventLoopFuture<Product> {
         let data = try req.content.decode(Product.CreateData.self)
         let user = try req.auth.require(User.self)
-        let acronym = try Product(
+        let product = try Product(
             title: data.title,
             description: data.description,
             isDeleted: false,
@@ -45,7 +46,7 @@ struct ProductsController: RouteCollection {
             imageUrl: data.imageUrl,
             creatorUser: user.requireID()
         )
-        return acronym.save(on: req.db).map { acronym }
+        return product.save(on: req.db).map { product }
     }
     
     func getHandler(_ req: Request) -> EventLoopFuture<Product> {
@@ -62,9 +63,8 @@ struct ProductsController: RouteCollection {
             .unwrap(or: Abort(.notFound))
             .flatMap { product in
                 guard !product.isDeleted,
-                      let productOwner = try? product.creatorUser.requireID(),
                       let requestUser = try? user.requireID(),
-                      productOwner == requestUser else {
+                      product.$creatorUser.id == requestUser else {
                     return req.eventLoop.future(error: Abort(.methodNotAllowed))
                 }
 

@@ -37,7 +37,8 @@ struct CategoriesController: RouteCollection {
         guard user.role == "admin" else { throw Abort(.methodNotAllowed) }
 
         let categoryCreateData = try req.content.decode(Category.CreateData.self)
-        return Category.find(req.parameters.get("categoryID"), on: req.db)
+        return Category
+            .find(req.parameters.get("categoryID"), on: req.db)
             .unwrap(or: Abort(.notFound))
             .flatMapThrowing { category in
                 guard !category.isDeleted else {
@@ -52,7 +53,7 @@ struct CategoriesController: RouteCollection {
             }
     }
     
-    func deleteHandler(_ req: Request) throws -> EventLoopFuture<Category> {
+    func deleteHandler(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let user = try req.auth.require(User.self)
         guard user.role == "admin" else { throw Abort(.methodNotAllowed) }
 
@@ -66,9 +67,7 @@ struct CategoriesController: RouteCollection {
                 category.isDeleted = true
                 return category
             }
-            .flatMap { category in
-                category.update(on: req.db).map { category }
-            }
+            .flatMap { $0.update(on: req.db).transform(to: .noContent) }
     }
     
     func getAllHandler(_ req: Request) -> EventLoopFuture<[Category]> {

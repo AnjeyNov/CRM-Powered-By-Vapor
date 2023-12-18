@@ -74,16 +74,16 @@ struct UsersController: RouteCollection {
     }
 
     func deleteHandler(_ req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        let creator = try req.auth.require(User.self)
-        guard creator.role == "admin" else {
-            throw Abort(.methodNotAllowed)
-        }
+        let requestUser = try req.auth.require(User.self)
         
         return User
             .find(req.parameters.get("userID"), on: req.db)
             .unwrap(or: Abort(.notFound))
             .flatMap { user in
-                guard !user.isDeleted else { return req.eventLoop.future(error: Abort(.conflict)) }
+                guard !user.isDeleted, requestUser.id == user.id || requestUser.role == "admin" else {
+                    return req.eventLoop.future(error: Abort(.conflict))
+                }
+
                 user.isDeleted = true
                 return user.save(on: req.db).transform(to: .noContent)
             }
@@ -100,6 +100,10 @@ struct UsersController: RouteCollection {
         User
             .find(req.parameters.get("userID"), on: req.db)
             .unwrap(or: Abort(.notFound))
+            .flatMapThrowing {
+                guard !$0.isDeleted else { throw Abort(.notFound) }
+                return $0
+            }
             .convertToPublic()
     }
 

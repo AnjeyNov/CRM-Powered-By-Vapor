@@ -33,7 +33,7 @@ final class Product: Model, Content {
     var creationDate: Date
     
     @Field(key: CodingKeys.imageUrl.fieldKey)
-    var imageUrl: URL
+    var imageUrl: String
     
     @Parent(key: CodingKeys.creatorUserId.fieldKey)
     var creatorUser: User
@@ -52,7 +52,7 @@ final class Product: Model, Content {
         description: String,
         isDeleted: Bool,
         creationDate: Date,
-        imageUrl: URL,
+        imageUrl: String,
         creatorUser: User.IDValue
     ) {
         self.id = id
@@ -69,6 +69,6 @@ extension Product {
     final class CreateData: Content {
         let title: String
         let description: String
-        let imageUrl: URL
+        let imageUrl: String
     }
 }

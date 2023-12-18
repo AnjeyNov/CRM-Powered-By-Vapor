@@ -26,8 +26,9 @@ struct CommentsController: RouteCollection {
             .find(req.parameters.get("productID"), on: req.db)
             .unwrap(or: Abort(.notFound))
             .flatMap { product in
-                product.$comments.get(on: req.db)
+                product.$comments.query(on: req.db).filter(\.$isDeleted != true).all()
             }
+            
     }
     
     func addCommentHandler(_ req: Request) throws -> EventLoopFuture<Comment> {
@@ -66,14 +67,15 @@ struct CommentsController: RouteCollection {
                     throw Abort(.notFound)
                 }
                 
-                guard (try comment.creatorUser.requireID()) == (try user.requireID()) else {
+                guard comment.$creatorUser.id == (try user.requireID()) else {
                     throw Abort(.forbidden)
                 }
                 
                 comment.description = commentCreationData.description
-                
-                try comment.save(on: req.db).wait()
+
                 return comment
+            }.flatMap { comment in
+                comment.update(on: req.db).map { comment }
             }
     }
     
@@ -88,15 +90,13 @@ struct CommentsController: RouteCollection {
                     throw Abort(.notFound)
                 }
     
-                guard try (comment.creatorUser.requireID() == user.requireID()) || user.role == "admin" else {
+                guard try comment.$creatorUser.id == user.requireID() || user.role == "admin" else {
                     throw Abort(.forbidden)
                 }
 
                 comment.isDeleted = true
                 return comment
             }
-            .flatMap { comment in
-                comment.update(on: req.db).transform(to: .noContent)
-            }
+            .flatMap { $0.update(on: req.db).transform(to: .noContent) }
     }
 }

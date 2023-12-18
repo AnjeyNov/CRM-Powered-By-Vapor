@@ -13,6 +13,7 @@ struct CreateCategory: AsyncMigration {
             .id()
             .field(Category.CodingKeys.name.fieldKey, .string, .required)
             .field(Category.CodingKeys.isDeleted.fieldKey, .bool, .required)
+            .unique(on: Category.CodingKeys.name.fieldKey)
             .create()
     }
 
